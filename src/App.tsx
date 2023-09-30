@@ -1,50 +1,37 @@
-import { useState, useEffect, useCallback } from 'react'
-import { Layout, Space, Button, Table, message, TableColumnProps, Modal, Input, Checkbox } from 'antd'
+import { useState, useEffect, useCallback, memo } from 'react'
+import { Layout, Space, Button, Table, message, Popconfirm } from 'antd'
 import { ITemplate } from './typings/api'
-import { createTemplate, getTemplateList } from './api/template'
+import { createTemplate, deleteTemplate, getTemplateList } from './api/template'
+import TemplateModal from './components/TemplateModal'
 
 const { Header, Footer, Content } = Layout
+const { Column } = Table
 
-const columns: TableColumnProps<ITemplate>[] = [
-  {
-    title: 'Name',
-    dataIndex: 'name',
-    key: 'name'
-  },
-  {
-    title: 'NPM Name',
-    dataIndex: 'npmName',
-    key: 'npmName'
-  },
-  {
-    title: 'Value',
-    dataIndex: 'value',
-    key: 'value'
-  },
-  {
-    title: 'Version',
-    dataIndex: 'version',
-    key: 'version',
-  },
-  {
-    title: 'Is force install?',
-    dataIndex: 'forceInstall',
-    key: 'forceInstall',
-    render: (_, { forceInstall }) => {
-      return forceInstall ? 'Yes' : 'No'
-    }
-  }
-]
-
-function App() {
+const App = memo(() => {
   const [messageApi, contextHolder] = message.useMessage();
   const [list, setList] = useState<ITemplate[]>([])
-  const [template, setTemplate] = useState<ITemplate>()
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
   const [confirmLoading, setConfirmLoading] = useState(false)
 
   useEffect(() => {
+    handleList()
+  }, [])
+
+  const handleDelete = (value: string) => {
+    setLoading(true)
+    deleteTemplate(value)
+      .then(count => {
+        if (count) {
+          messageApi.success('The template deleted!')
+          handleList()
+        }
+      })
+      .catch(err => messageApi.error(err))
+      .finally(() => setLoading(false))
+  }
+
+  const handleList = useCallback(() => {
     setLoading(true)
     getTemplateList()
       .then(res => setList(res.list))
@@ -52,17 +39,17 @@ function App() {
       .finally(() => setLoading(false))
   }, [messageApi])
 
-  const handleCreate = useCallback(() => {
-    if (template) {
-      setConfirmLoading(true)
-      createTemplate(template)
-        .then(() => {
-          messageApi.success('The template Created')
-        })
-        .catch(err => messageApi.error(err))
-        .finally(() => setConfirmLoading(false))
-    }
-  }, [template, messageApi])
+  const handleCreate = useCallback((template: ITemplate) => {
+    setConfirmLoading(true)
+    createTemplate(template)
+      .then(() => {
+        messageApi.success('The template Created')
+        handleList()
+        setOpen(false)
+      })
+      .catch(err => messageApi.error(err))
+      .finally(() => setConfirmLoading(false))
+  }, [messageApi, handleList])
 
   return (
     <>
@@ -74,10 +61,34 @@ function App() {
         <Content>
           <Space direction='vertical'>
             <div>
-              <Button type="primary">Create Template</Button>
+              <Button type="primary" onClick={() => setOpen(true)}>Create Template</Button>
             </div>
             <div>
-              <Table columns={columns} dataSource={list} loading={loading} />
+              <Table dataSource={list} loading={loading} rowKey={'value'}>
+                <Column title="Name" dataIndex="name" key="name" />
+                <Column title="NPM Name" dataIndex="npmName" key="npmName" />
+                <Column title="Value" dataIndex="value" key="value" />
+                <Column title="Version" dataIndex="version" key="version" />
+                <Column title="Is force install?" dataIndex="forceInstall" key="forceInstall" render={(forceInstall) => forceInstall ? 'Yes' : 'No'} />
+                <Column
+                  title="Action"
+                  key="action"
+                  render={(_, record: ITemplate) => (
+                    <Space size="middle">
+                      <a>Update</a>
+                      <Popconfirm
+                        title="Delete the template"
+                        description="Are you sure to delete this template?"
+                        onConfirm={() => handleDelete(record.value)}
+                        okText="Yes"
+                        cancelText="No"
+                      >
+                        <a>Delete</a>
+                      </Popconfirm>
+                    </Space>
+                  )}
+                />
+              </Table>
             </div>
           </Space>
         </Content>
@@ -85,31 +96,15 @@ function App() {
           By MarkTang
         </Footer>
       </Space>
-      <Modal
-        title="Create a template"
+      <TemplateModal
+        title='Create a template'
         open={open}
         confirmLoading={confirmLoading}
-        onOk={handleCreate}
-        onCancel={() => setOpen(false)}
-      >
-        <div>
-          <Input placeholder="Please enter name" />
-        </div>
-        <div>
-          <Input placeholder="Please enter npm package name" />
-        </div>
-        <div>
-          <Input placeholder="Please enter value" />
-        </div>
-        <div>
-          <Input placeholder="Please enter version" />
-        </div>
-        <div>
-          <Checkbox onChange={ }>force install</Checkbox>
-        </div>
-      </Modal>
+        confirmFn={handleCreate}
+        cancelFn={() => setOpen(false)}
+      />
     </>
   )
-}
+})
 
 export default App

@@ -13,6 +13,6 @@ export async function updateTemplate(template: ITemplate) {
   return request.post('/template/update', template)
 }
 
-export async function deleteTemplate(value: string) {
+export async function deleteTemplate(value: string): Promise<number> {
   return request.get(`/template/delete/${value}`)
 }
