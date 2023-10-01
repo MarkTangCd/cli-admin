@@ -3,7 +3,6 @@ import { Layout, Space, Button, Table, message, Popconfirm } from 'antd'
 import { ITemplate } from './typings/api'
 import { createTemplate, deleteTemplate, getTemplateList, updateTemplate } from './api/template'
 import TemplateModal from './components/TemplateModal'
-import useLatest from './hooks/useLatest'
 
 const { Header, Footer, Content } = Layout
 const { Column } = Table
@@ -15,7 +14,6 @@ const App = memo(() => {
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
   const [confirmLoading, setConfirmLoading] = useState(false)
-  const ref = useLatest(updateTmp)
 
   useEffect(() => {
     handleList()
@@ -91,9 +89,7 @@ const App = memo(() => {
                   render={(_, record: ITemplate) => (
                     <Space size="middle">
                       <a onClick={() => {
-                        console.log('test---------------')
-                        console.log(record)
-                        setUpdateTmp(() => record)
+                        setUpdateTmp(record)
                         setOpen(true)
                       }}>Update</a>
                       <Popconfirm
@@ -123,9 +119,9 @@ const App = memo(() => {
         confirmFn={updateTmp ? handleUpdate : handleCreate}
         cancelFn={() => {
           setOpen(false)
-          setUpdateTmp(() => undefined)
+          setUpdateTmp(undefined)
         }}
-        template={ref.current}
+        template={updateTmp}
       />
     </>
   )

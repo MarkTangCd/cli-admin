@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import { FC, useEffect } from 'react'
 import { Modal, Form, Input, Checkbox } from 'antd'
 import { ITemplate } from '../typings/api';
 
@@ -13,6 +13,14 @@ interface IProps {
 
 const TemplateModal: FC<IProps> = ({ title, open, confirmLoading, confirmFn, cancelFn, template }) => {
   const [form] = Form.useForm()
+
+  useEffect(() => {
+    //TODO: Console有warning, 最好先检查form是否绑定上了 DOM element
+    if (form) {
+      // 之前使用form上的 initialValues属性，但这样没办法进行reset，所以使用这种方式绑定
+      form.setFieldsValue(template ?? { forceInstall: false })
+    }
+  }, [template, form])
 
   return (
     <Modal
@@ -31,7 +39,6 @@ const TemplateModal: FC<IProps> = ({ title, open, confirmLoading, confirmFn, can
         labelCol={{ span: 8 }}
         wrapperCol={{ span: 16 }}
         style={{ maxWidth: 600 }}
-        initialValues={template ?? { forceInstall: false }}
         onFinish={confirmFn}
         autoComplete="off"
       >
