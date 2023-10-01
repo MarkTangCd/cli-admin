@@ -20,7 +20,10 @@ const TemplateModal: FC<IProps> = ({ title, open, confirmLoading, confirmFn, can
       open={open}
       confirmLoading={confirmLoading}
       onOk={() => form.submit()}
-      onCancel={cancelFn}
+      onCancel={() => {
+        form.resetFields()
+        cancelFn()
+      }}
     >
       <Form
         name="basic"
@@ -53,7 +56,7 @@ const TemplateModal: FC<IProps> = ({ title, open, confirmLoading, confirmFn, can
           name="value"
           rules={[{ required: true, message: 'Please input the template value!' }]}
         >
-          <Input />
+          <Input disabled={template ? true : false} />
         </Form.Item>
 
         <Form.Item<ITemplate>
